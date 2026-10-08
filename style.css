@@ -790,3 +790,24 @@ body.theme-retro .btn-primary{
 }
 .achv-pop.show{ opacity:1; transform:translate(-50%,0); }
 .achv-pop small{ display:block; font-weight:600; color:var(--dim); margin-top:2px; }
+
+/* Диагностика запуска: показывается, только если игра не стартовала.
+   Живёт поверх всего и намеренно выглядит как ошибка, а не как часть игры. */
+.boot-error{
+  position:fixed; left:12px; right:12px;
+  top:calc(12px + env(safe-area-inset-top));
+  z-index:200;
+  padding:16px 16px 14px;
+  border-radius:16px;
+  background:#2a1116;
+  border:1px solid rgba(255,92,92,.55);
+  color:var(--txt);
+  box-shadow:0 14px 40px rgba(0,0,0,.5);
+}
+.boot-error b{ display:block; font-size:15px; color:var(--red); margin-bottom:6px; }
+.boot-error p{
+  margin:0 0 12px; font-size:13px; line-height:1.4;
+  color:var(--dim);
+  word-break:break-word;
+}
+.boot-error .btn{ width:100%; }

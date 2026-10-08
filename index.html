@@ -205,8 +205,73 @@
     <div class="modal" id="modal"></div>
   </div>
 
+  <!-- Диагностика для «не грузится»: появляется только если игра не стартовала -->
+  <div class="boot-error hidden" id="bootError">
+    <b>Игра не запустилась</b>
+    <p id="bootErrorText">…</p>
+    <button class="btn btn-mini" id="bootReset">Сбросить сохранение и перезагрузить</button>
+  </div>
+
 </div>
 
+<script>
+/* ===================== «ЧЁРНЫЙ ЯЩИК» ЗАПУСКА ============================
+   ЗАЧЕМ: если игра не стартует (белый экран на телефоне), по пустому
+   экрану невозможно понять причину. Этот сторож живёт до всех остальных
+   скриптов, ловит ошибки загрузки и, если через 2 секунды ui.js так и не
+   отметился как запущенный, показывает текст проблемы и кнопку сброса
+   сохранения. Работает и внутри ВК, и в обычном браузере. */
+window.__DZ_BOOTED = false;
+window.__DZ_ERROR = null;
+
+window.__DZ_SHOW_ERROR = function (text) {
+  try {
+    var box = document.getElementById('bootError');
+    if (!box) return;
+    var msg = document.getElementById('bootErrorText');
+    if (msg) msg.textContent = String(text).slice(0, 400);
+    box.classList.remove('hidden');
+  } catch (e) { /* показать не удалось — молчим */ }
+};
+
+window.addEventListener('error', function (e) {
+  if (window.__DZ_BOOTED) return;
+  window.__DZ_ERROR = (e && (e.message || (e.target && e.target.src))) || 'неизвестная ошибка';
+  window.__DZ_SHOW_ERROR('Ошибка при загрузке: ' + window.__DZ_ERROR);
+}, true);
+
+setTimeout(function () {
+  if (window.__DZ_BOOTED) return;
+  window.__DZ_SHOW_ERROR(window.__DZ_ERROR || 'Скрипты не успели запуститься за 2 секунды');
+}, 2000);
+
+/* Сброс: чистим все ключи игры (dz.*) и перезагружаемся. Нужен, если
+   сохранение побилось и мешает старту. */
+(function () {
+  var btn = document.getElementById('bootReset');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('dz.') === 0) localStorage.removeItem(k);
+      }
+    } catch (e) { /* нет доступа к хранилищу — просто перезагружаемся */ }
+    location.reload();
+  });
+})();
+
+window.addEventListener('error', function (e) {
+  if (window.__DZ_BOOTED) return;
+  window.__DZ_ERROR = (e && (e.message || (e.target && e.target.src))) || 'неизвестная ошибка';
+  window.__DZ_SHOW_ERROR('Ошибка при загрузке: ' + window.__DZ_ERROR);
+}, true);
+
+setTimeout(function () {
+  if (window.__DZ_BOOTED) return;
+  window.__DZ_SHOW_ERROR(window.__DZ_ERROR || 'Скрипты не успели запуститься за 2 секунды');
+}, 2000);
+</script>
 <script src="js/storage.js"></script>
 <script src="js/events.js"></script>
 <!-- Контент-паки: докладывают события через Events.add([...]) -->
