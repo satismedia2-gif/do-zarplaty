@@ -14,7 +14,7 @@
    ========================================================================== */
 'use strict';
 
-var CACHE_VERSION = 'v4';
+var CACHE_VERSION = 'v6';
 var CACHE = 'do-zarplaty-' + CACHE_VERSION;
 
 /* ВАЖНО: cache.addAll() падает целиком, если хотя бы один файл отдаёт 404,
