@@ -5,8 +5,8 @@
    внутри iframe, то есть когда игра реально запущена в ВК.
 
    Что делает:
-     1) подгружает официальный VK Bridge и вызывает VKWebAppInit — без этого
-        приложение в каталоге ВК висит на бесконечном лоадере;
+     1) подгружает VK Bridge (своя копия → jsDelivr → unpkg) и вызывает
+        VKWebAppInit — без этого приложение в ВК висит на бесконечном лоадере;
      2) красит шапку и нижнюю панель под тёмную тему игры;
      3) даёт облачный сейв (VK Storage) — прогресс не теряется при смене
         устройства, телефон→компьютер;
@@ -24,7 +24,21 @@
 
   if (!inFrame) return;                        // локальная версия остаётся офлайн-игрой
 
-  var BRIDGE_URL = 'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js';
+  /* ============================ ЗАГРУЗКА МОСТА ==========================
+     ЗАЧЕМ ТРИ ИСТОЧНИКА. Раньше VK Bridge тянулся только с unpkg.com.
+     На мобильных сетях этот CDN часто не отвечает (запрос висит, а не
+     падает), поэтому: onload не срабатывал → VKWebAppInit не уходил →
+     приложение бесконечно висело на лоадере ВК. На десктопе CDN отвечал,
+     и всё работало. Теперь первый источник — своя копия рядом с игрой,
+     а если её нет или она побилась, идём по запасным CDN.
+
+     Порядок важен: свой файл отдаётся с того же домена, что и игра, —
+     это единственный вариант, который не зависит от чужой сети. */
+  var BRIDGE_SOURCES = [
+    'js/vk-bridge.min.js',
+    'https://cdn.jsdelivr.net/npm/@vkontakte/vk-bridge/dist/browser.min.js',
+    'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js'
+  ];
   var CLOUD_KEY = 'dz_save';
   var ready = false;
   var queue = [];
@@ -324,12 +338,36 @@
   /* -------------------------------------------------------------- загрузка -- */
   readLaunchParams();
 
-  var s = global.document.createElement('script');
-  s.src = BRIDGE_URL;
-  s.async = true;
-  s.onload = function () { bootBridge(); flush(); };
-  s.onerror = function () { /* нет сети/ВК — играем как обычный сайт */ };
-  global.document.head.appendChild(s);
+  function initBridge() {
+    if (ready) return;
+    bootBridge();          // VKWebAppInit — без него ВК не уберёт свой лоадер
+    flush();
+  }
+
+  function loadBridge(i) {
+    if (ready || i >= BRIDGE_SOURCES.length) return;
+    var s = global.document.createElement('script');
+    s.src = BRIDGE_SOURCES[i];
+    s.async = true;
+    s.onload = function () {
+      // файл загрузился, но моста в нём нет (например, HTML-страница ошибки)
+      if (!bridge()) { loadBridge(i + 1); return; }
+      initBridge();
+    };
+    s.onerror = function () { loadBridge(i + 1); };
+    global.document.head.appendChild(s);
+  }
+  loadBridge(0);
+
+  /* Страховка для мобильных WebView: onload у динамического скрипта иногда
+     не срабатывает вовсе. Тогда ловим появление window.vkBridge опросом —
+     без этого игра снова осталась бы на вечном лоадере. */
+  var polls = 0;
+  var poll = global.setInterval(function () {
+    if (ready) { global.clearInterval(poll); return; }
+    if (bridge()) { global.clearInterval(poll); initBridge(); return; }
+    if (++polls > 40) global.clearInterval(poll);   // 10 секунд — хватит
+  }, 250);
 
   /* «резинка» и зум внутри iframe ВК сильно мешают играть пальцем */
   try {
@@ -337,6 +375,8 @@
     global.document.body.style.overscrollBehavior = 'none';
   } catch (e) { /* ignore */ }
 
+  /* Последний рубеж: если моста так и нет, игра всё равно должна играться
+     (облако и вибрация просто не будут работать). */
   global.setTimeout(function () { if (!ready) flush(); }, 3000);
 
 })(typeof window !== 'undefined' ? window : globalThis);
