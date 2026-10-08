@@ -14,7 +14,7 @@
    ========================================================================== */
 'use strict';
 
-var CACHE_VERSION = 'v10';
+var CACHE_VERSION = 'v11';
 var CACHE = 'do-zarplaty-' + CACHE_VERSION;
 
 /* ВАЖНО: cache.addAll() падает целиком, если хотя бы один файл отдаёт 404,
@@ -37,7 +37,9 @@ var ASSETS = [
   './js/sound.js',
   './js/game.js',
   './js/ui.js',
-  './js/vk.js'
+  './js/vk.js',
+  './js/vk-boot.js',
+  './js/vk-bridge.min.js'
 ];
 
 self.addEventListener('install', function (event) {
