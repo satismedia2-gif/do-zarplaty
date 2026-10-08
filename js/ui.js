@@ -1133,8 +1133,16 @@
     el.btnSoundStart.textContent = Sound.isOn() ? '🔊 Звук' : '🔇 Звук';
 
     if (el.startHint) {
-      el.startHint.textContent = Game.eventCount() + ' событий · ' +
-        Game.GOALS.length + ' мечты · ' + Game.ARCHETYPES.length + ' профессии · ' + Game.PERKS.length + ' перка';
+      /* Числа динамические (контент-паки могут добавить событий), поэтому
+         формы слов считаем хелпером, а не пишем жёстко: «5 мечты» —
+         неверное склонение. Перки в этой строке не упоминаем: новичок
+         всё равно не может их купить (очков ещё нет), а список перков
+         виден ниже своим блоком. */
+      var evs = Game.eventCount();
+      el.startHint.textContent =
+        evs + ' ' + plural(evs, ['событие', 'события', 'событий']) + ' · ' +
+        Game.GOALS.length + ' ' + plural(Game.GOALS.length, ['мечта', 'мечты', 'мечт']) + ' · ' +
+        Game.ARCHETYPES.length + ' ' + plural(Game.ARCHETYPES.length, ['профессия', 'профессии', 'профессий']);
     }
     if (el.startScroll) el.startScroll.scrollTop = 0;
   }
