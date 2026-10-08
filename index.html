@@ -284,11 +284,31 @@ setTimeout(function () {
 <!-- Обвязка ВКонтакте: включается только внутри iframe (VK Mini Apps) -->
 <script src="js/vk.js"></script>
 <script>
-/* PWA: офлайн-режим. На file:// service worker недоступен, поэтому молча пропускаем. */
+/* PWA: офлайн-режим. На file:// service worker недоступен, поэтому молча пропускаем.
+
+   ВАЖНО ПРО ВК. Внутри iframe ВКонтакте офлайн-кэш не нужен: ВК сам без сети
+   не работает. Зато активный service worker успевает перехватить загрузку
+   страницы и при неудаче отдать пустой ответ — в мобильном приложении это
+   выглядит как «Ошибка загрузки. Проверьте подключение к сети». Поэтому в
+   iframe мы не регистрируем воркер, а уже установленный — снимаем. */
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('service-worker.js').catch(function () { /* офлайн не критичен */ });
-  });
+  var inVkFrame = false;
+  try { inVkFrame = window.parent !== window; } catch (e) { inVkFrame = true; }
+
+  if (inVkFrame) {
+    navigator.serviceWorker.getRegistrations().then(function (list) {
+      for (var i = 0; i < list.length; i++) list[i].unregister();
+    }).catch(function () { /* нет доступа — не критично */ });
+    if (window.caches && window.caches.keys) {
+      caches.keys().then(function (keys) {
+        for (var i = 0; i < keys.length; i++) caches.delete(keys[i]);
+      }).catch(function () { /* ignore */ });
+    }
+  } else {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('service-worker.js').catch(function () { /* офлайн не критичен */ });
+    });
+  }
 }
 </script>
 </body>
