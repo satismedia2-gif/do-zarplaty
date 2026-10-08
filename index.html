@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>До зарплаты — симулятор выживания</title>
+<meta name="description" content="До зарплаты — событийный симулятор российского быта: 100 дней между авансом и зарплатой, доширак, перфоратор соседа, кредит за машину и вечная надежда дожить до пятницы.">
+<meta name="theme-color" content="#0b0e13">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= ЭКРАН 1: СТАРТ ================= -->
+  <section class="screen is-active" id="screen-start">
+    <div class="start-wrap">
+      <div class="logo">
+        <span class="logo-small">симулятор выживания</span>
+        <span class="logo-big">ДО<em>ЗАРПЛАТЫ</em></span>
+        <span class="logo-sub" id="startHint">100 дней между авансом и зарплатой</span>
+      </div>
+
+      <div class="start-scroll" id="startScroll">
+        <!-- Очки опыта и постоянные перки: живут между партиями -->
+        <div class="panel">
+          <div class="panel-head">💎 Очки опыта: <b id="pointsLabel">0</b>
+            <span class="panel-note" id="pointsNote"></span>
+          </div>
+          <div class="perk-list" id="perkList"></div>
+        </div>
+
+        <!-- Мечта партии -->
+        <div class="panel">
+          <div class="panel-head">🎯 Мечта на эту жизнь</div>
+          <div class="pick-list" id="goalList"></div>
+        </div>
+
+        <!-- Профессия -->
+        <div class="panel">
+          <div class="panel-head">🧑‍💼 Кем работаешь</div>
+          <div class="pick-list" id="archList"></div>
+        </div>
+
+        <div class="start-best hidden" id="startBest"></div>
+      </div>
+
+      <div class="start-actions">
+        <button class="btn btn-primary btn-xl" id="btnNew">▶&nbsp; Начать жизнь</button>
+        <button class="btn btn-ghost btn-xl" id="btnDaily">🌍&nbsp; Ежедневный забег</button>
+        <button class="btn btn-ghost btn-xl hidden" id="btnContinue">Продолжить · день <span id="contDay">1</span></button>
+        <div class="start-row">
+          <button class="btn btn-mini" id="btnSoundStart">🔊 Звук</button>
+          <button class="btn btn-mini" id="btnTheme">🎨 Тема</button>
+          <button class="btn btn-mini" id="btnRulesStart">📖 Правила</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ЭКРАН 2: ИГРА ================= -->
+  <section class="screen" id="screen-game">
+    <header id="hud">
+      <div class="hud-top">
+        <div class="avatar" id="hudAvatar" title="Состояние">🙂</div>
+        <div class="day-chip"><b id="hudDay">1</b><span>день</span></div>
+        <div class="money-chip" id="hudMoney">0 ₽</div>
+        <button class="icon-btn" id="btnJournal" aria-label="Журнал расходов">📒</button>
+        <button class="icon-btn" id="btnDetails" aria-label="Подробно о состоянии">📊</button>
+        <button class="icon-btn" id="btnMenu" aria-label="Меню">☰</button>
+      </div>
+      <div class="chip-line" id="hudChips"></div>
+      <div class="stat-grid" id="hudStats"></div>
+      <div class="car-line hidden" id="hudCar"></div>
+      <!-- критические предупреждения: показываются, только когда реально плохо -->
+      <div class="warn-strip hidden" id="warnStrip"></div>
+    </header>
+
+    <main id="table">
+      <div class="table-inner" id="tableInner"></div>
+    </main>
+
+    <footer id="actions"></footer>
+  </section>
+
+  <!-- ================= ЭКРАН 3: ФИНАЛ ================= -->
+  <section class="screen" id="screen-end">
+    <div class="end-scroll">
+      <div class="end-badge" id="endBadge">🍜</div>
+      <h2 class="end-title" id="endTitle">Ты выжил</h2>
+      <p class="end-sub" id="endSub"></p>
+
+      <div class="end-days">Ты прожил <b id="endDays">0</b> <span id="endDaysWord">дней</span></div>
+
+      <div class="end-grid">
+        <div class="end-card">
+          <span class="ec-label">Заработал</span>
+          <b class="ec-val up" id="endEarned">0 ₽</b>
+        </div>
+        <div class="end-card">
+          <span class="ec-label">Потратил</span>
+          <b class="ec-val down" id="endSpent">0 ₽</b>
+        </div>
+        <div class="end-card wide">
+          <span class="ec-label">Главная причина провала</span>
+          <b class="ec-val" id="endCause">—</b>
+          <span class="ec-note" id="endCauseNote"></span>
+        </div>
+        <div class="end-card wide">
+          <span class="ec-label">Самая дорогая ошибка</span>
+          <b class="ec-val down" id="endWorst">—</b>
+          <span class="ec-note" id="endWorstNote"></span>
+        </div>
+        <div class="end-card wide">
+          <span class="ec-label">Самое удачное решение</span>
+          <b class="ec-val up" id="endBest">—</b>
+          <span class="ec-note" id="endBestNote"></span>
+        </div>
+        <div class="end-card">
+          <span class="ec-label">Подработок</span>
+          <b class="ec-val" id="endGigs">0</b>
+        </div>
+        <div class="end-card">
+          <span class="ec-label">Поломок пережито</span>
+          <b class="ec-val" id="endBreakdowns">0</b>
+        </div>
+        <div class="end-card">
+          <span class="ec-label">Семья</span>
+          <b class="ec-val" id="endFamily">0</b>
+        </div>
+        <div class="end-card">
+          <span class="ec-label">Работа</span>
+          <b class="ec-val" id="endWork">0</b>
+        </div>
+        <div class="end-card wide">
+          <span class="ec-label">Стиль игрока</span>
+          <b class="ec-val" id="endStyle">—</b>
+          <span class="ec-note" id="endStyleNote"></span>
+        </div>
+        <div class="end-card wide">
+          <span class="ec-label">Мечта</span>
+          <b class="ec-val" id="endGoal">—</b>
+          <span class="ec-note" id="endGoalNote"></span>
+        </div>
+        <div class="end-card">
+          <span class="ec-label">Профессия</span>
+          <b class="ec-val" id="endArch">—</b>
+        </div>
+        <div class="end-card">
+          <span class="ec-label">Заработано очков</span>
+          <b class="ec-val up" id="endPoints">0</b>
+        </div>
+      </div>
+
+      <div class="ach-block">
+        <div class="ach-head">Достижения <span id="endAchvCount">0 / 0</span></div>
+        <div class="ach-grid" id="endAchv"></div>
+      </div>
+
+      <div class="rating">
+        <div class="rating-top">
+          <span>Ты лучше <b id="endPercent">0</b>% игроков</span>
+          <span class="rating-score" id="endScore">рейтинг 0</span>
+        </div>
+        <div class="rating-bar"><i id="endRatingBar"></i></div>
+        <div class="rating-note" id="endRecord"></div>
+      </div>
+
+      <div class="end-actions">
+        <button class="btn btn-primary btn-xl" id="btnAgain">🔄&nbsp; Начать новую жизнь</button>
+        <button class="btn btn-ghost" id="btnCard">🖼&nbsp; Карточка результата</button>
+        <button class="btn btn-ghost" id="btnBoard">🏆&nbsp; Таблица лидеров</button>
+        <button class="btn btn-ghost" id="btnShare">Поделиться результатом</button>
+        <button class="btn btn-mini" id="btnToStart">В меню</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= СЛОИ ================= -->
+  <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+  <!-- Единая зона уведомлений: тосты, достижения и предупреждения встают
+       столбиком над панелью действий и не перекрывают кнопки выбора -->
+  <div class="notice-zone" id="noticeZone" role="status" aria-live="polite"></div>
+  <div class="modal-back hidden" id="modalBack">
+    <div class="modal" id="modal"></div>
+  </div>
+
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/events.js"></script>
+<!-- Контент-паки: докладывают события через Events.add([...]) -->
+<script src="js/events-pack-1.js"></script>
+<script src="js/events-pack-2.js"></script>
+<script src="js/events-pack-3.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<!-- Обвязка ВКонтакте: включается только внутри iframe (VK Mini Apps) -->
+<script src="js/vk.js"></script>
+<script>
+/* PWA: офлайн-режим. На file:// service worker недоступен, поэтому молча пропускаем. */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('service-worker.js').catch(function () { /* офлайн не критичен */ });
+  });
+}
+</script>
+</body>
+</html>
